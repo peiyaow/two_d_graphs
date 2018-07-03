@@ -8,7 +8,7 @@ Created on Tue Apr 24 17:27:42 2018
 
 import sys
 sys.path.append('/nas/longleaf/home/peiyao/proj2')
-
+sys.path.append('..')
 from two_d_graphs.myfunctions import *
 import TVGL.myTVGL as mtvgl
 import numpy as np
