@@ -131,7 +131,7 @@ def getGraphatT_Shuheng(S, A, n_change):
     A_new = (S_new + S_new.T)/2 + np.matrix(np.eye(p))
     
     # check PD
-    print(np.all(alg.eigvals(A_new) > 0))
+    # print(np.all(alg.eigvals(A_new) > 0))
     return S_new0, A_new
 
 def getCov(A):
