@@ -55,7 +55,10 @@ X_array = np.array(X_list) # class by time by ni by p
 X_array = np.reshape(X_array, (len_class, len_t*ni, p)) # class by ni*len_t by p
     
 pool = NoDaemonProcessPool(processes=10)
-results_paper = [pool.apply(mtvgl.myTVGL, args=(X_array, ni, parameters[0], parameters[1], indexOfPenalty, True, h)) for parameters in mesh_parameters]
+results_mymethod = [pool.apply(mtvgl.myTVGL, args=(X_array, ni, parameters[0], parameters[1], indexOfPenalty, True, h)) for parameters in mesh_parameters]
+
+Theta_mymethod_array = np.array(results_mymethod)
+
 
 f = open("Theta_mymethod.pkl", 'wb')
 pickle.dump(results_mymethod, f)
