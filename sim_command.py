@@ -14,7 +14,7 @@ seeds = np.floor(1e4*np.random.uniform(size = [2,nsim])).astype(int)
 for i in range(nsim):
 #    system_string = "python2 myfunctions.py" + ' ' +  str(seeds[0,i]) + ' ' +str(seeds[1,i])
 #    os.system("python2 test.py" + ' ' +  str(seeds[0,i]) + ' ' +str(seeds[1,i]))
-    mystring = "python Theta_glasso_parallel.py" + ' ' +  str(seeds[0,i]) + ' ' + str(seeds[1,i]) + ' ' + str(i)
+    mystring = "python Theta_paper_parallel.py" + ' ' +  str(seeds[0,i]) + ' ' + str(seeds[1,i]) + ' ' + str(i)
     os.system('sbatch -o glasso.out -t 00-10:00 -n 10 --mem-per-cpu 4G -N 1-1 --wrap="' + mystring + '"')
 
     
