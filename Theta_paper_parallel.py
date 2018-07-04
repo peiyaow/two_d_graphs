@@ -9,7 +9,6 @@ Created on Tue Apr 24 17:27:42 2018
 import sys
 sys.path.append('/nas/longleaf/home/peiyao/proj2')
 from two_d_graphs.myfunctions import *
-import TVGL.myTVGL as mtvgl
 import TVGL.TVGL as tvgl
 import numpy as np
 import random
@@ -60,12 +59,15 @@ for class_ix in range(len_class):
     results_paper = [pool.apply(tvgl.TVGL, args=(X_concat_list[class_ix], ni, parameters[0], parameters[1], indexOfPenalty)) for parameters in mesh_parameters]
     results_paper_list.append(results_paper)
 
-Theta_paper_array = np.array(results_paper_list) # alpha by beta
-Theta_paper_array = np.reshape(Theta_paper_array, (set_length_alpha, set_length_beta, len_t, len_class, p, p)) # alpha beta t class p p
-Theta_paper_array = np.transpose(Theta_paper_array, [1, 3, 2, 0, 4, 5]) # beta, class, time, alpha, row, col
+Theta_paper_array = np.array(results_paper_list) # class by alpha by beta by t by p by p 
+Theta_paper_array = np.transpose(Theta_paper_array, [2, 0, 3, 1, 4, 5]) # beta, class, time, alpha, row, col
 
 filename = 'paper' + str(sim_ix) + '.npy' 
 np.save(filename, Theta_paper_array)
+
+
+
+
 
 
 

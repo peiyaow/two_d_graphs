@@ -85,7 +85,7 @@ def getGraph(p,d):
             S[i,:] = S[i,:]/vec_div[i]
     A = (S + S.T)/2 + np.matrix(np.eye(p))
     # check if A is PD
-    print(np.all(alg.eigvals(A) > 0))
+    # print(np.all(alg.eigvals(A) > 0))
     #print(alg.eigvals(A))
     return S0, A
     
