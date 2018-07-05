@@ -329,10 +329,50 @@ def myglasso(X_list, ix_product, set_length):
     result = []
     for alpha in alpha_set:
         emp_cov = genEmpCov(X_list[class_ix][time_ix].T)
-        ml_glasso = cov.graph_lasso(emp_cov, alpha, cov_init=cov_last, max_iter = 500) 
+        ml_glasso = cov.graph_lasso(emp_cov, alpha, cov_init=cov_last, verbose = True) 
         cov_last = ml_glasso[0]
         result.append(ml_glasso[1])
     return result
+
+def Shuheng_method(X_list, ix_product, set_length, sigma, width = 5, knownMean = False):
+    class_ix, time_ix = ix_product
+    cov_last = None
+    alpha_max_ct = alpha_max(genEmpCov(X_list[class_ix][time_ix].T))
+    alpha_set = np.logspace(np.log10(alpha_max_ct*5e-2), np.log10(alpha_max_ct), set_length)
+    result = []
+    for alpha in alpha_set:
+        emp_cov = genEmpCov_kernel(time_ix, sigma, width, X_list[class_ix], knownMean)
+        ml_glasso = cov.graph_lasso(emp_cov, alpha, cov_init=cov_last, verbose = True) 
+        cov_last = ml_glasso[0]
+        result.append(ml_glasso[1])
+    return result
+
+# each element in sample_set is n by p len is total length of timestamp
+# total width = 2*width + 1
+def genEmpCov_kernel(t_query, sigma, width, sample_set, knownMean = False):
+    timesteps = sample_set.__len__()
+#    print timesteps
+    K_sum = 0
+    S = 0
+#    print(range(int(max(0,t_query-width)), int(min(t_query+width+1, timesteps))))
+    if knownMean != True:
+        for j in range(int(max(0,t_query-width)), int(min(t_query+width+1, timesteps))):         
+            K =  np.exp(-np.square(t_query - j)/sigma)
+            samplesPerStep = sample_set[j].shape[0]
+            mean = np.mean(sample_set[j], axis = 0) # p by 1
+#            print mean
+            mean_tile = np.tile(mean, (samplesPerStep,1))
+#            print mean_tile.shape
+            S = S + K*np.dot((sample_set[j]- mean_tile).T, sample_set[j] - mean_tile)/samplesPerStep
+            K_sum = K_sum + K
+    else:
+        for j in range(int(max(0,t_query-width)), int(min(t_query+width+1, timesteps))):         
+            K =  np.exp(-np.square(t_query - j)/sigma)
+            samplesPerStep = sample_set[j].shape[0]
+            S = S + K*np.dot((sample_set[j]).T, sample_set[j])/samplesPerStep
+            K_sum = K_sum + K
+    S = S/K_sum    
+    return S
 
 class NoDaemonProcess(mp.Process):
     # make 'daemon' attribute always return False

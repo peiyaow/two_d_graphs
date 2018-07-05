@@ -57,8 +57,9 @@ X_array = np.reshape(X_array, (len_class, len_t*ni, p)) # class by ni*len_t by p
 pool = NoDaemonProcessPool(processes=10)
 results_mymethod = [pool.apply(mtvgl.myTVGL, args=(X_array, ni, parameters[0], parameters[1], indexOfPenalty, True, h)) for parameters in mesh_parameters]
 
-Theta_mymethod_array = np.array(results_mymethod) # alpha, beta, time, class, p, p
-Theta_mymethod_array = np.reshape(Theta_mymethod_array, [1, 3, 2, 0, 4, 5]) # beta, class, time, alpha, row, col
+Theta_mymethod_array = np.array(results_mymethod) 
+Theta_mymethod_array = np.reshape(Theta_mymethod_array, (set_length_alpha, set_length_beta, len_t, len_class, p, p)) # alpha, beta, time, class, p, p
+Theta_mymethod_array = np.transpose(Theta_mymethod_array, [1, 3, 2, 0, 4, 5]) # beta, class, time, alpha, row, col
 
 filename = 'mymethod' + str(sim_ix) + '.npy' 
 np.save(filename, Theta_mymethod_array)

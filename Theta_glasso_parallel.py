@@ -42,7 +42,7 @@ mesh_product = list(product)
 pool = mp.Pool(processes=10)
 Theta_glasso_list = [pool.apply(myglasso, args=(X_list, ix_product, set_length)) for ix_product in mesh_product]
 
-Theta_glasso_array = np.array(Theta_glasso_list) # 44 class by time
+Theta_glasso_array = np.array(Theta_glasso_list) # class by time by alpha by p by p
 Theta_glasso_array = np.reshape(Theta_glasso_array, (len_class, len_t, set_length, p, p))
 
 filename = 'glasso' + str(sim_ix) + '.npy' 
