@@ -83,6 +83,8 @@ f.close()
 #array = np.reshape(array, (4,25))
 # reshape the array back to the 1D form
 
+
+
 #---------------------------------------- Calculating P and R -------------------------------------------------
 class_ix = 3
 

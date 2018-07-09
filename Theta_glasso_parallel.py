@@ -45,8 +45,11 @@ Theta_glasso_list = [pool.apply(myglasso, args=(X_list, ix_product, set_length))
 Theta_glasso_array = np.array(Theta_glasso_list) # class by time by alpha by p by p
 Theta_glasso_array = np.reshape(Theta_glasso_array, (len_class, len_t, set_length, p, p))
 
+class_ix = 3
+PD_result = PD_array_simple(Theta_glasso_array, A_list, class_ix)
+    
 filename = 'glasso' + str(sim_ix) + '.npy' 
-np.save(filename, Theta_glasso_array)
+np.save(filename, PD_result)
 
 
 

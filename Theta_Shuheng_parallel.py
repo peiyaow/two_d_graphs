@@ -48,5 +48,8 @@ Theta_Shuheng_list = [pool.apply(Shuheng_method, args=(X_list, ix_product, set_l
 Theta_Shuheng_array = np.array(Theta_Shuheng_list) 
 Theta_Shuheng_array = np.reshape(Theta_Shuheng_array, (len_class, len_t, set_length, p, p)) # class by time by alpha by p by p
 
+class_ix = 3
+PD_result = PD_array_simple(Theta_Shuheng_array, A_list, class_ix)
+
 filename = 'Shuheng' + str(sim_ix) + '.npy' 
-np.save(filename, Theta_Shuheng_array)
+np.save(filename, PD_result)

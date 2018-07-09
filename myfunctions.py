@@ -187,6 +187,38 @@ def getF1(S0, S1):
         F1 = np.nan
     return P, R, F1
 
+def getPD(Theta_array, A_list, class_ix = 0, time_ix = 5):
+    set_length = Theta_array.shape[2]
+    precision_list = []
+    recall_list = []
+    for i in range(set_length):
+        P,R,F1 = getF1(A_list[class_ix][time_ix], Theta_array[class_ix][time_ix][i])
+        precision_list.append(P)
+        recall_list.append(R)
+    return (precision_list, recall_list)
+
+# --- plotting tools ---
+def PD_array(Theta_array, A_list, class_ix):
+    # input: Theta_array: beta by class by time by alpha by p by p
+    # output: result2: array beta by 2(P or R) by alpha
+    len_beta = Theta_array.shape[0]
+    P_list = []
+    R_list = []
+    for i in range(len_beta):
+       P, R = getPD(Theta_array[i], A_list, class_ix)
+       P_list.append(P)
+       R_list.append(R)
+    result2 = np.array([P_list, R_list]) # 2(P or R) by beta by alpha
+    result2 = np.transpose(result2, [1,0,2]) # beta by 2(P or R) by alpha
+    return result2
+
+def PD_array_simple(Theta_array_simple, A_list, class_ix):
+    # Theta_array: class by time by alpha by p by p
+    P_list, R_list = getPD(Theta_array_simple, A_list, class_ix)
+    result = np.array([P_list, R_list]) # 2(P or R) by alpha
+    return result
+# -----------------------
+    
 def getAIC(S_est, S_previous, empCov, ni):
 #    S_diff = (S_est - S_previous)  
 #    S_diff = S_diff - np.diag(np.diag(S_diff))
@@ -233,16 +265,6 @@ def alpha_max(emp_cov):
     A = np.copy(emp_cov)
     A.flat[::A.shape[0] + 1] = 0
     return np.max(np.abs(A))
-
-def getPD(Theta_array, A_list, class_ix = 0, time_ix = 5):
-    set_length = Theta_array.shape[2]
-    precision_list = []
-    recall_list = []
-    for i in range(set_length):
-        P,R,F1 = getF1(A_list[class_ix][time_ix], Theta_array[class_ix][time_ix][i])
-        precision_list.append(P)
-        recall_list.append(R)
-    return (precision_list, recall_list)
 
 def simulate_data(p0 = 20, p1 = 20, d0 = 1, d1 = 1, ni = 50, n_change = 2, len_t = 11):
     #---------------------------------------- Generating basic structures ----------------------------------------------
