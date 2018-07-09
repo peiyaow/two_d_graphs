@@ -59,6 +59,8 @@ for class_ix in range(len_class):
     results_paper = [pool.apply(tvgl.TVGL, args=(X_concat_list[class_ix], ni, parameters[0], parameters[1], indexOfPenalty)) for parameters in mesh_parameters]
     results_paper_list.append(results_paper)
 
+tvgl.TVGL(X_concat_list[0], ni, 0.5, 1, indexOfPenalty)
+
 Theta_paper_array = np.array(results_paper_list) # class by alpha by beta by t by p by p 
 Theta_paper_array = np.reshape(Theta_paper_array, (len_class, set_length_alpha, set_length_beta, len_t, p, p)) #  class, alpha, beta, time, p, p
 Theta_paper_array = np.transpose(Theta_paper_array, [2, 0, 3, 1, 4, 5]) # beta, class, time, alpha, row, col
