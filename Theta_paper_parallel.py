@@ -38,7 +38,7 @@ p = X_list[0][0].shape[1]
 
 set_length_alpha = 51
 set_length_beta = 51
-indexOfPenalty = 1
+indexOfPenalty = 3
 
 alpha_upper = alpha_max(genEmpCov(X_list[3][10].T))
 alpha_lower = alpha_max(genEmpCov(X_list[0][0].T))
@@ -59,7 +59,7 @@ for class_ix in range(len_class):
     results_paper = [pool.apply(tvgl.TVGL, args=(X_concat_list[class_ix], ni, parameters[0], parameters[1], indexOfPenalty)) for parameters in mesh_parameters]
     results_paper_list.append(results_paper)
 
-tvgl.TVGL(X_concat_list[0], ni, 0.5, 1, indexOfPenalty)
+# tvgl.TVGL(X_concat_list[0], ni, 0.5, 1, indexOfPenalty)
 
 Theta_paper_array = np.array(results_paper_list) # class by alpha*beta by t by p by p 
 Theta_paper_array = np.reshape(Theta_paper_array, (len_class, set_length_alpha, set_length_beta, len_t, p, p)) #  class, alpha, beta, time, p, p

@@ -29,7 +29,7 @@ import multiprocessing as mp
 #---------------------------------------------- Define private functions -----------------------------------------------------
 #def getGraph_snap(p,d):
 #    # construct a graph from scale free distribution
-#    # paper: The joint graphical lasso for inverse covarianceestimation across multiple classes
+#    # paper: The joint graphical lasso for inverse covariance estimation across multiple classes
 #    # reference: https://rss.onlinelibrary.wiley.com/doi/epdf/10.1111/rssb.12033
 #    # another paper: Partial Correlation Estimation by Joint Sparse Regression Models
 #    # p: number of nodes
@@ -66,6 +66,12 @@ import multiprocessing as mp
 #    return S0, A
 
 def getGraph(p,d):
+#    # construct a graph from scale free distribution
+#    # paper: The joint graphical lasso for inverse covariance estimation across multiple classes
+#    # reference: https://rss.onlinelibrary.wiley.com/doi/epdf/10.1111/rssb.12033
+#    # another paper: Partial Correlation Estimation by Joint Sparse Regression Models
+#    # p: number of nodes
+#    # d: out degree of each node
     S = nx.barabasi_albert_graph(p, d)  
     S = nx.adjacency_matrix(S)
     S = sparse.triu(S)
@@ -217,6 +223,43 @@ def PD_array_simple(Theta_array_simple, A_list, class_ix):
     P_list, R_list = getPD(Theta_array_simple, A_list, class_ix)
     result = np.array([P_list, R_list]) # 2(P or R) by alpha
     return result
+
+# set working directory as TVGL_result
+def get_average_array(name):
+    glasso_P_array = np.array([]).reshape(0,51)
+    glasso_R_array = np.array([]).reshape(0,51)
+    for i in range(50):
+        path = "./glasso/glasso"+str(i)+".npy"    
+        path = "./"+name+"/"+name+str(i)+".npy" 
+        result = np.load(path)
+        glasso_P_array = np.concatenate((glasso_P_array, result[0, None]), axis = 0)
+        glasso_R_array = np.concatenate((glasso_R_array, result[1, None]), axis = 0)
+
+    P_inx = np.logical_and(glasso_P_array!=0,  np.logical_not(np.isnan(glasso_P_array)))
+    R_inx = np.logical_and(glasso_R_array!=0,  np.logical_not(np.isnan(glasso_R_array)))    
+    glasso_P_array[np.logical_not(P_inx)] = 0
+    glasso_R_array[np.logical_not(R_inx)] = 0    
+    glasso_P_array_average = np.sum(glasso_P_array*P_inx, axis=0)/np.sum(P_inx, axis=0)
+    glasso_R_array_average = np.sum(glasso_R_array*R_inx, axis=0)/np.sum(R_inx, axis=0)
+    return np.array((glasso_P_array_average, glasso_R_array_average))
+
+def get_average_array_ix(name, ix):
+    glasso_P_array = np.array([]).reshape(0,51)
+    glasso_R_array = np.array([]).reshape(0,51)
+    for i in range(50):
+        path = "./glasso/glasso"+str(i)+".npy"    
+        path = "./"+name+"/"+name+str(i)+".npy" 
+        result = np.load(path)
+        glasso_P_array = np.concatenate((glasso_P_array, result[ix][0, None]), axis = 0)
+        glasso_R_array = np.concatenate((glasso_R_array, result[ix][1, None]), axis = 0)
+
+    P_inx = np.logical_and(glasso_P_array!=0,  np.logical_not(np.isnan(glasso_P_array)))
+    R_inx = np.logical_and(glasso_R_array!=0,  np.logical_not(np.isnan(glasso_R_array)))    
+    glasso_P_array[np.logical_not(P_inx)] = 0
+    glasso_R_array[np.logical_not(R_inx)] = 0    
+    glasso_P_array_average = np.sum(glasso_P_array*P_inx, axis=0)/np.sum(P_inx, axis=0)
+    glasso_R_array_average = np.sum(glasso_R_array*R_inx, axis=0)/np.sum(R_inx, axis=0)
+    return np.array((glasso_P_array_average, glasso_R_array_average))
 # -----------------------
     
 def getAIC(S_est, S_previous, empCov, ni):
