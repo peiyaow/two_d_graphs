@@ -12,6 +12,7 @@ sys.path.append('/nas/longleaf/home/peiyao/proj2/TVGL')
 
 import numpy as np
 import random
+import os
 # import snap
 import numpy.linalg as alg
 from scipy.linalg import block_diag
@@ -229,7 +230,7 @@ def get_average_array(name):
     glasso_P_array = np.array([]).reshape(0,51)
     glasso_R_array = np.array([]).reshape(0,51)
     for i in range(50):
-        path = "./glasso/glasso"+str(i)+".npy"    
+#        path = "./glasso/glasso"+str(i)+".npy"    
         path = "./"+name+"/"+name+str(i)+".npy" 
         result = np.load(path)
         glasso_P_array = np.concatenate((glasso_P_array, result[0, None]), axis = 0)
@@ -247,11 +248,12 @@ def get_average_array_ix(name, ix):
     glasso_P_array = np.array([]).reshape(0,51)
     glasso_R_array = np.array([]).reshape(0,51)
     for i in range(50):
-        path = "./glasso/glasso"+str(i)+".npy"    
+        #path = "./glasso/glasso"+str(i)+".npy"    
         path = "./"+name+"/"+name+str(i)+".npy" 
-        result = np.load(path)
-        glasso_P_array = np.concatenate((glasso_P_array, result[ix][0, None]), axis = 0)
-        glasso_R_array = np.concatenate((glasso_R_array, result[ix][1, None]), axis = 0)
+        if os.path.exists(path):
+            result = np.load(path)
+            glasso_P_array = np.concatenate((glasso_P_array, result[ix][0, None]), axis = 0)
+            glasso_R_array = np.concatenate((glasso_R_array, result[ix][1, None]), axis = 0)
 
     P_inx = np.logical_and(glasso_P_array!=0,  np.logical_not(np.isnan(glasso_P_array)))
     R_inx = np.logical_and(glasso_R_array!=0,  np.logical_not(np.isnan(glasso_R_array)))    
