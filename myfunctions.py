@@ -219,9 +219,9 @@ def PD_array(Theta_array, A_list, class_ix):
     result2 = np.transpose(result2, [1,0,2]) # beta by 2(P or R) by alpha
     return result2
 
-def PD_array_simple(Theta_array_simple, A_list, class_ix):
+def PD_array_simple(Theta_array_simple, A_list, class_ix, time_ix):
     # Theta_array: class by time by alpha by p by p
-    P_list, R_list = getPD(Theta_array_simple, A_list, class_ix)
+    P_list, R_list = getPD(Theta_array_simple, A_list, class_ix, time_ix)
     result = np.array([P_list, R_list]) # 2(P or R) by alpha
     return result
 
@@ -388,6 +388,49 @@ def simulate_data(p0 = 20, p1 = 20, d0 = 1, d1 = 1, ni = 50, n_change = 2, len_t
         #Theta_glassocv_list.append(Theta_t)
     return A_list, C_list, X_list
 
+def simulate_data_xie(p = 100, d = 3, n_vec = [50, 50, 50, 50], ni = 50, n_change = 3, len_t = 50, K = 4):
+    # S_list = [] # upper triangle
+    A_list = [] # Omega graph 
+    C_list = [] # Covariance
+    for k in range(K+1):
+        gG = getGraph(p, d)
+        S = gG[0]
+        A = gG[1]
+        A_T = getGraphatT_Shuheng(S, A, n_change)[1]
+        A_T_list = [lam*A_T+(1-lam)*A for lam in np.linspace(0, 1, len_t)] # Omega
+        C_T_list = [getCov(item) for item in A_T_list] # Cov: 0+class time
+        
+        A_list.append(A_T_list)
+        C_list.append(C_T_list)
+        
+    A_array = np.array(A_list)
+    A_add_list = [] # class time p p
+    for k in range(1,K+1):
+        A_k_list = []
+        for time_ix in range(len_t):
+            O_0_inv = alg.inv(A_array[0][time_ix])
+            O_k_inv = alg.inv(A_array[k][time_ix])
+            A_k_list.append(alg.inv(O_0_inv+O_k_inv))
+        A_add_list.append(A_k_list)
+        
+    Y_list = []
+    for time_ix in range(len_t):
+        C0 = C_list[0][time_ix] 
+        Y_t = []
+        Z = np.random.multivariate_normal(mean = np.zeros(p), cov = C0, size = ni)
+        for k in range(1,K+1):
+            Ck = C_list[k][time_ix]
+            X = np.random.multivariate_normal(mean = np.zeros(p), cov = Ck, size = n_vec[k-1])
+            Y = X+Z
+            Y_t.append(Y)
+        Y_list.append(Y_t)
+        
+    Y_array = np.array(Y_list) # time class n p
+#    Y_array = np.transpose(Y_array, [0, 2, 1, 3]) # time n class p
+#    Y_array = np.reshape(Y_array, [len_t, n_vec[0], K*p]) # time n Kp
+        
+    return A_list, A_add_list, C_list, Y_array
+
 def myglasso(X_list, ix_product, set_length):
     class_ix, time_ix = ix_product
     cov_last = None
@@ -401,14 +444,14 @@ def myglasso(X_list, ix_product, set_length):
         result.append(ml_glasso[1])
     return result
 
-def Shuheng_method(X_list, ix_product, set_length, sigma, width = 5, knownMean = False):
+def Shuheng_method(X_list, ix_product, set_length, sigma, width = 5, knownMean = False, m = 0):
     class_ix, time_ix = ix_product
     cov_last = None
     alpha_max_ct = alpha_max(genEmpCov(X_list[class_ix][time_ix].T))
     alpha_set = np.logspace(np.log10(alpha_max_ct*5e-2), np.log10(alpha_max_ct), set_length)
     result = []
     for alpha in alpha_set:
-        emp_cov = genEmpCov_kernel(time_ix, sigma, width, X_list[class_ix], knownMean)
+        emp_cov = genEmpCov_kernel(time_ix, sigma, width, X_list[class_ix], knownMean, m)
         ml_glasso = cov.graph_lasso(emp_cov, alpha, cov_init=cov_last, verbose = True) 
         cov_last = ml_glasso[0]
         result.append(ml_glasso[1])
@@ -416,7 +459,7 @@ def Shuheng_method(X_list, ix_product, set_length, sigma, width = 5, knownMean =
 
 # each element in sample_set is n by p len is total length of timestamp
 # total width = 2*width + 1
-def genEmpCov_kernel(t_query, sigma, width, sample_set, knownMean = False):
+def genEmpCov_kernel(t_query, sigma, width, sample_set, knownMean = False, m=0):
     timesteps = sample_set.__len__()
 #    print timesteps
     K_sum = 0
@@ -436,7 +479,7 @@ def genEmpCov_kernel(t_query, sigma, width, sample_set, knownMean = False):
         for j in range(int(max(0,t_query-width)), int(min(t_query+width+1, timesteps))):         
             K =  np.exp(-np.square(t_query - j)/sigma)
             samplesPerStep = sample_set[j].shape[0]
-            S = S + K*np.dot((sample_set[j]).T, sample_set[j])/samplesPerStep
+            S = S + K*np.dot((sample_set[j]-m).T, sample_set[j]-m)/samplesPerStep
             K_sum = K_sum + K
     S = S/K_sum    
     return S

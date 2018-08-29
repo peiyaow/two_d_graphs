@@ -10,8 +10,18 @@ sys.path.append(os.path.abspath('..')+'/TVGL')
 
 import numpy as np
 from myfunctions import *
-from scipy.linalg import block_diag
 import numpy.linalg as alg
+import random
+import itertools
+import multiprocessing as mp
+
+#------------------------------------------- retrieve data ---------------------------------------------------------------------
+myseed1 = int(sys.argv[1])
+myseed2 = int(sys.argv[2])
+sim_ix = int(sys.argv[3])
+
+random.seed(myseed1)
+np.random.seed(myseed2)
 
 p = 100
 d = 3
@@ -20,37 +30,16 @@ ni = 50
 n_change = 3
 len_t = 50
 K = 4
+h = 5.848/np.cbrt(len_t)
+width = 5
+set_length = 51 # number of lambdas
 
-# S_list = [] # upper triangle
-A_list = [] # Omega graph 
-C_list = [] # Covariance
-for k in range(K+1):
-    gG = getGraph(p, d)
-    S = gG[0]
-    A = gG[1]
-    A_T = getGraphatT_Shuheng(S, A, n_change)[1]
-    A_T_list = [lam*A_T+(1-lam)*A for lam in np.linspace(0, 1, len_t)] # Omega
-    C_T_list = [getCov(item) for item in A_T_list] # Cov: 0+class time
-    
-    A_list.append(A_T_list)
-    C_list.append(C_T_list)
-    
-Y_list = []
-for time_ix in range(len_t):
-    C0 = C_list[0][time_ix] 
-    Y_t = []
-    Z = np.random.multivariate_normal(mean = np.zeros(p), cov = C0, size = ni)
-    for k in range(1,K+1):
-        Ck = C_list[k][time_ix]
-        X = np.random.multivariate_normal(mean = np.zeros(p), cov = Ck, size = n_vec[k-1])
-        Y = X+Z
-        Y_t.append(Y)
-    Y_list.append(Y_t)    
-    
-Y_array = np.array(Y_list) # time class n p
+A_list, O_list, C_list, Y_array = simulate_data_xie() # Y_array: time class n p
+Y_array = np.transpose(Y_array, [0, 2, 1, 3]) # time n class p
+Y_array = np.reshape(Y_array, [len_t, n_vec[0], K*p]) # time n Kp
+
 t = 0
-Y_t_array = np.transpose(Y_array[t], [1, 0, 2]) # n class p
-Y_t = np.reshape(Y_t_array, [n_vec[0], K*p])
+S_Y = genEmpCov(Y_array[t].T, useKnownMean = True)
 
 # try on dimension
 #try_array = np.reshape(np.array(range(24)), [2,3,4]) # class by n by p
@@ -58,21 +47,15 @@ Y_t = np.reshape(Y_t_array, [n_vec[0], K*p])
 #try_array = np.reshape(try_array, [3, 8])
 
 # subtract the mean
-Y_t = Y_t - np.mean(Y_t, axis = 0).reshape(1,-1)
+# Y_t = Y_t - np.mean(Y_t, axis = 0).reshape(1,-1)
 
-S_Y = np.matmul(Y_t.T, Y_t)/n_vec[0] # Sigma_Y
+# S_Y = np.matmul(Y_t.T, Y_t)/n_vec[0] # Sigma_Y
 S_0 = np.zeros([p, p]) # Sigma_0
 for m in range(K):
     for l in [i for i in range(K) if i != m]:
         S_ml = S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
         S_0 = S_0 + S_ml
 S_0 = S_0/((K-1)*K)
-
-
-#for m in range(K):
-#    for l in [i for i in range(K) if i != m]:
-#        print(m*p+np.array(range(p)))
-#        print(l*p+np.array(range(p)))
 
 S_K_list = []
 for k in range(K):
@@ -86,6 +69,7 @@ S_pd_list = []
 for k in range(K+1):
     S_pd_list.append(nearestPD(S_hat_list[k]))
 
+S_pd_list
 lam1 = 0.5
 lam2 = 0.5
 lam_vec = [lam1, lam2, lam2, lam2, lam2] 
@@ -188,7 +172,7 @@ while np.abs(pen_likelihood - pen_likelihood0) > 1e-4:
     pen_likelihood = likelihood - penalty
     print(pen_likelihood)     
       
-np.diag(S_pd_list[0])
+# np.diag(S_pd_list[0])
         
         
         
