@@ -6,6 +6,7 @@ Created on Tue Aug 28 16:32:40 2018
 """
 
 from numpy import linalg as la
+import numpy as np
 
 def nearestPD(A):
     """Find the nearest positive-definite matrix to input

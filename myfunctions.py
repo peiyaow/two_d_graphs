@@ -22,6 +22,8 @@ import networkx as nx
 from scipy import sparse
 
 import multiprocessing as mp
+from posdef import *
+import itertools
 
 # from scipy.linalg import block_diag
 # import TVGL as tvgl
@@ -403,7 +405,7 @@ def simulate_data_xie(p = 100, d = 3, n_vec = [50, 50, 50, 50], ni = 50, n_chang
         A_list.append(A_T_list)
         C_list.append(C_T_list)
         
-    A_array = np.array(A_list)
+    A_array = np.array(A_list) # class time p p 
     A_add_list = [] # class time p p
     for k in range(1,K+1):
         A_k_list = []
@@ -455,6 +457,7 @@ def Shuheng_method(X_list, ix_product, set_length, sigma, width = 5, knownMean =
         ml_glasso = cov.graph_lasso(emp_cov, alpha, cov_init=cov_last, verbose = True) 
         cov_last = ml_glasso[0]
         result.append(ml_glasso[1])
+        print(alpha)
     return result
 
 # each element in sample_set is n by p len is total length of timestamp
@@ -496,6 +499,127 @@ class NoDaemonProcess(mp.Process):
 # because the latter is only a wrapper function, not a proper class.
 class NoDaemonProcessPool(mp.pool.Pool):
     Process = NoDaemonProcess
+    
+def EM_xie_time_varying(S_Y, p, K, set_length):
+    # S_Y empirical covariance
+    # set_length: length for lambdas
+    S_0 = np.zeros([p, p]) # Sigma_0
+    for m in range(K):
+        for l in [i for i in range(K) if i != m]:
+            S_ml = S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
+            S_0 = S_0 + S_ml
+    S_0 = S_0/((K-1)*K)
+    
+    S_K_list = []
+    for k in range(K):
+        S_k = S_Y[k*p+np.array(range(p))[:, None], k*p+np.array(range(p))[None, :]]
+        S_k = S_k - S_0
+        S_K_list.append(S_k)
+    
+    S_hat_list = [S_0] + S_K_list
+    S_pd0_list = []
+    # closest PSD
+    for k in range(K+1):
+        S_pd0_list.append(nearestPD(S_hat_list[k]))
+    
+    lam_max_vec = [alpha_max(item) for item in S_pd0_list]
+    lam1_max = lam_max_vec[0]
+    lam2_max = max(lam_max_vec[1:])
+    lam1_vec = np.logspace(np.log10(lam1_max*5e-1), np.log10(lam1_max), set_length)[::-1]
+    lam2_vec = np.logspace(np.log10(lam2_max*5e-1), np.log10(lam2_max), set_length)[::-1]
+    
+    lam_product = itertools.product(lam1_vec, lam2_vec)
+    lam_product_list = list(lam_product)
+    
+    Omega_grid_list = []
+    for i in range(set_length):
+        lam1_0 = lam_product_list[set_length*i][0]
+        lam2_0 = lam_product_list[set_length*i][1]
+        lam_vec = [lam1_0]+list(np.repeat(lam2_0, K))
+        
+        #initialize
+        Omega_list = [cov.graph_lasso(S_pd0_list[k], lam_vec[k], verbose = False)[1] for k in range(K+1)] 
+        
+        A = np.zeros([p,p])
+        for k in range(K):
+            A = A + Omega_list[k]
+        A_inv = alg.inv(A)
+        
+        likelihood_K = 0
+        for k in range(K):
+            likelihood_K = likelihood_K + np.log(alg.det(Omega_list[k+1])) - np.trace(np.matmul(S_Y[k*p+np.array(range(p))[:, None], k*p+np.array(range(p))[None, :]], Omega_list[k+1]))
+        
+        tr_OSOA = 0
+        for m in range(K):
+            for l in range(K):
+                OSOA = np.matmul(np.matmul(np.matmul(Omega_list[m+1],S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]), Omega_list[l+1]), A_inv)
+                tr_OSOA = tr_OSOA + np.trace(OSOA)
+        
+        likelihood = likelihood_K + np.log(alg.det(Omega_list[0])) - np.log(alg.det(A)) + tr_OSOA
+        
+        penalty = 0
+        for k in range(K+1):
+            penalty = penalty + lam_vec[k]*np.sum(np.abs(np.tril(Omega_list[k], -1) + np.triu(Omega_list[k], 1)))             
+        
+        pen_likelihood = likelihood - penalty 
+    
+        Omega_lam1_list = []     
+        for j in range(set_length):
+            lam2 = lam_product_list[set_length*i+j][1]
+            lam_vec = [lam1_0] + list(np.repeat(lam2, K))
+            pen_likelihood0 = 0
+            while np.abs(pen_likelihood - pen_likelihood0) > 1e-4:       
+                OSO = np.zeros([p,p])
+                S_K_list = []
+                for m in range(K):
+                    SO = np.zeros([p,p])
+                    OS = np.zeros([p,p])
+                    for l in range(K):
+                        S_ml = S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
+                        S_lm = S_Y[l*p+np.array(range(p))[:, None], m*p+np.array(range(p))[None, :]]
+                        SO = SO + np.matmul(S_ml, Omega_list[l+1])
+                        OS = OS + np.matmul(Omega_list[l+1], S_lm)
+                        OSO = OSO + np.matmul(np.matmul(Omega_list[m+1],S_ml), Omega_list[l+1])
+                    S_mm = S_Y[m*p+np.array(range(p))[:, None], m*p+np.array(range(p))[None, :]]
+                    S_k = S_mm - np.matmul(SO, A_inv) - np.matmul(A_inv, OS)
+                    S_K_list.append(S_k)
+            
+                S_0 = A_inv + np.matmul(np.matmul(A_inv,OSO), A_inv)
+                S_K_list = [item + S_0 for item in S_K_list]
+                S_pd_list = [S_0] + S_K_list
+                
+                #M
+                Omega_list = [cov.graph_lasso(S_pd_list[k], lam_vec[k], verbose = False)[1] for k in range(K+1)] 
+                
+                # likelihood
+                A = np.zeros([p,p])
+                for k in range(K):
+                    A = A + Omega_list[k]
+                A_inv = alg.inv(A)
+                    
+                likelihood_K = 0
+                for k in range(K):
+                    likelihood_K = likelihood_K + np.log(alg.det(Omega_list[k+1])) - np.trace(np.matmul(S_Y[k*p+np.array(range(p))[:, None], k*p+np.array(range(p))[None, :]], Omega_list[k+1]))
+                
+                tr_OSOA = 0
+                for m in range(K):
+                    for l in range(K):
+                        OSOA = np.matmul(np.matmul(np.matmul(Omega_list[m+1],S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]), Omega_list[l+1]), A_inv)
+                        tr_OSOA = tr_OSOA + np.trace(OSOA)
+                
+                likelihood = likelihood_K + np.log(alg.det(Omega_list[0])) - np.log(alg.det(A)) + tr_OSOA
+                
+                penalty = 0
+                for k in range(K+1):
+                    penalty = penalty + lam_vec[k]*np.sum(np.abs(np.tril(Omega_list[k], -1) + np.triu(Omega_list[k], 1)))             
+                
+                pen_likelihood0 = pen_likelihood        
+                pen_likelihood = likelihood - penalty
+                print(pen_likelihood)
+            Omega_lam1_list.append(Omega_list)
+            print([i, j])
+        Omega_grid_list.append(Omega_lam1_list)
+    return Omega_grid_list
 #------------------------------------------- End defining private functions ----------------------------------------------------
     
 
