@@ -52,6 +52,8 @@ PD_result = []
 for k in range(K+1):
     PD_result.append(PD_array_simple(Omega_array, A_array, k, 25))
 
+PD_result = np.array(PD_result)
+np.save('test.npy', PD_result)
 
         
         
