@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue Sep  4 09:21:21 2018
+
+@author: peiyao
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Thu Aug 30 15:32:58 2018
 
 @author: peiyao
@@ -30,38 +37,35 @@ h = 5.848/np.cbrt(len_t)
 width = 5
 set_length = 50 # number of lambdas
 
-A_list, O_list, C_list, Y_array = simulate_data_xie() # Y_array: time class n p
-Y_array = np.transpose(Y_array, [0, 2, 1, 3]) # time n K p
-Y_array = np.reshape(Y_array, [len_t, n_vec[0], K*p]) # time n Kp
+A_list, O_list, C_list, Y_list = simulate_data_2dgraph() # Y_list: class time ni p
+Y_list = [np.array(Y_list[i]).transpose([1, 0, 2]).reshape([n_vec[i], len_t*p]) for i in range(K)] # each element: ni by time*p
+Y_array = np.vstack(Y_list)
 
-S_Y_list = [genEmpCov(Y_array[t].T, useKnownMean = True) for t in range(len_t)]
+#S_Y = genEmpCov(Y_array.T, useKnownMean = True)
+S_Y = np.matmul(Y_array.T, Y_array)/sum(n_vec)
+S_0 = np.zeros([p, p]) # Sigma_0
+for m in range(len_t):
+    for l in [i for i in range(len_t) if i != m]:
+#        print [m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
+        S_ml = S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
+        S_0 = S_0 + S_ml
+S_0 = S_0/((len_t-1)*len_t)
 
-S_pd0_T_list = []
-for time_ix in range(len_t):
-    # S_Y empirical covariance
-    # set_length: length for lambdas
-    S_Y = S_Y_list[time_ix]
-    S_0 = np.zeros([p, p]) # Sigma_0
-    for m in range(K):
-        for l in [i for i in range(K) if i != m]:
-            S_ml = S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
-            S_0 = S_0 + S_ml
-    S_0 = S_0/((K-1)*K)
+S_Y_list = [np.matmul(Y_list[k].T, Y_list[k])/n_vec[k] for k in range(K)]
+
+S_X_list = []
+for k in range(K):
+    S_Y_k = S_Y_list[k]
+    S_X_k_list = []
+    for time_ix in range(len_t):
+        S_Y_kt = S_Y_k[time_ix*p+np.array(range(p))[:, None], time_ix*p+np.array(range(p))[None, :]]
+        S_X_kt = nearestPD(S_Y_kt - S_0)
+        S_X_k_list.append(S_X_kt)
+    S_X_list.append(S_X_k_list)    
     
-    S_K_list = []
-    for k in range(K):
-        S_k = S_Y[k*p+np.array(range(p))[:, None], k*p+np.array(range(p))[None, :]]
-        S_k = S_k - S_0
-        S_K_list.append(S_k)
-    
-    S_hat_list = [S_0] + S_K_list
-    S_pd0_list = []
-    # closest PSD
-    for k in range(K+1):
-        S_pd0_list.append(nearestPD(S_hat_list[k]))
-    S_pd0_T_list.append(S_pd0_list)   
+S_0 = nearestPD(S_0)
 
-S_pd0_T_array = np.array(S_pd0_T_list).transpose([1,0,2,3]) # K time p p
+#############################################################################################################
 
 lam1 = 0.5
 lam2 = 0.5

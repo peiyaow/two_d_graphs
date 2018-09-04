@@ -433,6 +433,51 @@ def simulate_data_xie(p = 100, d = 3, n_vec = [50, 50, 50, 50], ni = 50, n_chang
         
     return A_list, A_add_list, C_list, Y_array
 
+def simulate_data_2dgraph(p = 100, d = 3, n_vec = [50, 50, 50, 50], ni = 50, n_change = 3, len_t = 50, K = 4):
+    # S_list = [] # upper triangle
+    A_list = [] # Omega graph 
+    C_list = [] # Covariance
+    for k in range(K):
+        gG = getGraph(p, d)
+        S = gG[0]
+        A = gG[1]
+        A_T = getGraphatT_Shuheng(S, A, n_change)[1]
+        A_T_list = [lam*A_T+(1-lam)*A for lam in np.linspace(0, 1, len_t)] # Omega
+        C_T_list = [getCov(item) for item in A_T_list] # Cov: 0+class time
+        A_list.append(A_T_list)
+        C_list.append(C_T_list)
+        
+    A_array = np.array(A_list) # class time p p 
+    A_add_list = [] # class time p p
+    
+    gG = getGraph(p, d)
+    A0 = gG[1]
+    C0 = getCov(A0)
+    
+    for k in range(K):
+        A_k_list = []
+        for time_ix in range(len_t):
+            O_0_inv = alg.inv(A0)
+            O_k_inv = alg.inv(A_array[k][time_ix])
+            A_k_list.append(alg.inv(O_0_inv+O_k_inv))
+        A_add_list.append(A_k_list)
+        
+    Y_list = []
+    for k in range(0,K):
+#        C0 = C_list[0][time_ix] 
+        Y_k = []
+        Z = np.random.multivariate_normal(mean = np.zeros(p), cov = C0, size = n_vec[k])
+        for time_ix in range(len_t):
+            Ck = C_list[k][time_ix]
+            X = np.random.multivariate_normal(mean = np.zeros(p), cov = Ck, size = n_vec[k])
+            Y = X+Z
+            Y_k.append(Y)
+        Y_list.append(Y_k)
+#    Y_array = np.array(Y_list) # class time n p
+#    Y_array = np.transpose(Y_array, [0, 2, 1, 3]) # time n class p
+#    Y_array = np.reshape(Y_array, [len_t, n_vec[0], K*p]) # time n Kp
+    return A_list, A_add_list, C_list, Y_list
+
 def myglasso(X_list, ix_product, set_length):
     class_ix, time_ix = ix_product
     cov_last = None
