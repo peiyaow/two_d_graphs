@@ -63,7 +63,50 @@ for time_ix in range(len_t):
 
 S_pd0_T_array = np.array(S_pd0_T_list).transpose([1,0,2,3]) # K time p p
 
-TVGL_xie(S_pd0_T_array[0], 0.5, 0.5, 1)
+lam1 = 0.5
+lam2 = 0.5
+lam_vec = [lam1, lam2, lam2, lam2, lam2] 
+beta = 0.5
+
+#initialize
+Omega_T_list = [TVGL_xie(S_pd0_T_array[k], lam_vec[k], beta, 3, verbose = True) for k in range(K+1)] 
+
+Omega_T_array = np.array(Omega_T_list)
+Omega_T_array = Omega_T_array.transpose([1,0,2,3])
+
+pen_likelihood_T = 0
+for time_ix in range(len_t):
+    Omega_list = Omega_T_array[time_ix]
+    S_Y = S_Y_list[time_ix]
+    
+    A = np.zeros([p,p])
+    for k in range(K):
+        A = A + Omega_list[k]
+    A_inv = alg.inv(A)
+    
+    likelihood_K = 0
+    for k in range(K):
+        likelihood_K = likelihood_K + np.log(alg.det(Omega_list[k+1])) - np.trace(np.matmul(S_Y[k*p+np.array(range(p))[:, None], k*p+np.array(range(p))[None, :]], Omega_list[k+1]))
+    
+    tr_OSOA = 0
+    for m in range(K):
+        for l in range(K):
+            OSOA = np.matmul(np.matmul(np.matmul(Omega_list[m+1],S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]), Omega_list[l+1]), A_inv)
+            tr_OSOA = tr_OSOA + np.trace(OSOA)
+    
+    likelihood = likelihood_K + np.log(alg.det(Omega_list[0])) - np.log(alg.det(A)) + tr_OSOA
+    
+    penalty = 0
+    for k in range(K+1):
+        penalty = penalty + lam_vec[k]*np.sum(np.abs(np.tril(Omega_list[k], -1) + np.triu(Omega_list[k], 1)))             
+    
+    pen_likelihood = likelihood - penalty  
+    print pen_likelihood
+    pen_likelihood_T = pen_likelihood_T + pen_likelihood
+    print pen_likelihood_T
+
+pen_likelihood0_T = 0
+    
 
 
 
