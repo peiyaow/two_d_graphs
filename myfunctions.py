@@ -433,7 +433,7 @@ def simulate_data_xie(p = 100, d = 3, n_vec = [50, 50, 50, 50], ni = 50, n_chang
         
     return A_list, A_add_list, C_list, Y_array
 
-def simulate_data_2dgraph(p = 100, d = 3, n_vec = [50, 50, 50, 50], ni = 50, n_change = 3, len_t = 50, K = 4):
+def simulate_data_2dgraph(p = 100, d = 3, n_vec = [50, 50, 50, 50], ni = 50, n_change = 3, len_t = 51, K = 4):
     # S_list = [] # upper triangle
     A_list = [] # Omega graph 
     C_list = [] # Covariance
@@ -463,7 +463,7 @@ def simulate_data_2dgraph(p = 100, d = 3, n_vec = [50, 50, 50, 50], ni = 50, n_c
         A_add_list.append(A_k_list)
         
     Y_list = []
-    for k in range(0,K):
+    for k in range(K):
 #        C0 = C_list[0][time_ix] 
         Y_k = []
         Z = np.random.multivariate_normal(mean = np.zeros(p), cov = C0, size = n_vec[k])
