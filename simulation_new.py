@@ -39,7 +39,7 @@ width = 5
 set_length = 50 # number of lambdas
 
 A_list, O_list, C_list, Y_list = simulate_data_2dgraph() # Y_list: class time ni p
-Y_list = [np.array(Y_list[i]).transpose([1, 0, 2]).reshape([n_vec[i], len_t*p]) for i in range(K)] # each element: ni by time*p
+Y_list = [np.array(Y_list[i]).transpose([1, 0, 2]).reshape([n_vec[i], len_t*p]) for i in range(K)] # n t p -> each element: ni by time*p
 S_Y_list = [np.matmul(Y_list[k].T, Y_list[k])/n_vec[k] for k in range(K)]
 
 S_0_list = []
