@@ -30,9 +30,11 @@ S_0_list = []
 S_0_pd_list = []
 for k in range(K): 
     S_Y = S_Y_list[k]
-    S_0 = np.zeros([p, p]) # Sigma_0
-    w = 0
+    S_0_k_list = []
+    S_0_pd_k_list = []
     for m in range(len_t):
+        S_0 = np.zeros([p, p]) # Sigma_0
+        w = 0
         for l in [i for i in range(len_t) if i != m]:
             S_ml = S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
             w_ml = np.exp(-np.square(m - l)/h)
@@ -40,39 +42,39 @@ for k in range(K):
             w = w + w_ml
             S_0 = S_0 + S_ml*w_ml
 #    S_0 = S_0/((len_t-1)*len_t)
-    S_0 = S_0/w
-    S_0_pd = nearestPD(S_0)
-    S_0_list.append(S_0)
-    S_0_pd_list.append(S_0_pd)
+        S_0 = S_0/w
+        S_0_pd = nearestPD(S_0)
+        S_0_k_list.append(S_0)
+        S_0_pd_k_list.append(S_0_pd)
+    S_0_list.append(S_0_k_list)
+    S_0_pd_list.append(S_0_pd_k_list)
     
 S_X_list = []
 for k in range(K): 
     S_Y = S_Y_list[k]
-    S_0 = S_0_list[k]
     S_X_k_list = []
     for m in range(len_t):
+        S_0 = S_0_list[k][m]
         S_mm = S_Y[m*p+np.array(range(p))[:, None], m*p+np.array(range(p))[None, :]]
         S_X = nearestPD(S_mm-S_0)
         S_X_k_list.append(S_X)
     S_X_list.append(S_X_k_list)
 
-# initial input
-S_0 = np.sum(np.array([S_0_pd_list[k]*n_vec[k]/n for k in range(K)]), axis = 0)
-S_X_array = np.array(S_X_list).transpose([1, 0, 2, 3])
+S_X_array = np.array(S_X_list).transpose([1, 0, 2, 3]) # class time p p -> time class p p
 
 # given time
-t = 0
+t = 40
+# initial input
+S_0 = np.sum(np.array([S_0_pd_list[k][t]*n_vec[k]/n for k in range(K)]), axis = 0)
 S_array = np.insert(S_X_array[t], 0, S_0, axis=0)
 S_array0 = S_array
-alpha_max(S_array0[2])
+alpha_max(S_array0[4])
 
-lam1 = 5
-lam2 = 30
+lam1 = 0.25
+lam2 = 0.6
 lam_vec = [lam1, lam2, lam2, lam2, lam2] 
 
-np.logspace(np.log10(80*5e-2), np.log10(80), 2)
-
-Omega_list = [cov.graph_lasso(S_array[k], lam_vec[k], verbose = False, max_iter=5000)[1] for k in range(K+1)] 
+Omega_list = [cov.graph_lasso(S_array[k], lam_vec[k], verbose = False, max_iter=5000, tol = 1e-3)[1] for k in range(K+1)] 
 A_list = [Omega_list[0]+Omega_list[k+1] for k in range(K)]
 
 log_likelihood = 0
@@ -95,7 +97,7 @@ for k in range(1,K+1):
 pen_likelihood = log_likelihood - penalty  
 pen_likelihood0 = 0
 
-while np.abs(pen_likelihood - pen_likelihood0) > 1e-4:       
+while np.abs(pen_likelihood - pen_likelihood0) > 1e-2:       
     # E
     S_0_pd_list1 = []
     S_K_list = []
@@ -113,7 +115,7 @@ while np.abs(pen_likelihood - pen_likelihood0) > 1e-4:
     S_array = np.insert(np.array(S_K_list), 0, S_01, axis=0)
     
     # M
-    Omega_list = [cov.graph_lasso(S_array[k], lam_vec[k], verbose = False)[1] for k in range(K+1)] 
+    Omega_list = [cov.graph_lasso(S_array[k], lam_vec[k], verbose = False, max_iter=5000, tol = 1e-3)[1] for k in range(K+1)] 
     A_list = [Omega_list[0]+Omega_list[k+1] for k in range(K)]
     
     log_likelihood = 0
@@ -135,7 +137,5 @@ while np.abs(pen_likelihood - pen_likelihood0) > 1e-4:
         penalty = penalty + lam_vec[k]*np.sum(np.abs(np.tril(Omega_list[k], -1) + np.triu(Omega_list[k], 1)))*n_vec[k-1]/n  
     pen_likelihood0 = pen_likelihood        
     pen_likelihood = log_likelihood - penalty  
-    print(pen_likelihood)
-    print alpha_max(S_array[0])
-    print alpha_max(S_array[1])
+    print((pen_likelihood, pen_likelihood - pen_likelihood0, alpha_max(S_array[0]), alpha_max(S_array[1])))
 
