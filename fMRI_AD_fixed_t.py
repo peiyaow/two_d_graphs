@@ -11,10 +11,9 @@ import os
 sys.path.append(os.path.abspath('..'))
 from two_d_graphs.myfunctions import *
 from two_d_graphs.posdef import *
-
 from scipy import io
 
-Y = io.loadmat('fMRI_AD.mat')['data']
+Y = io.loadmat('fMRI_AD.mat')['data0']
 K = Y.shape[1]
 p = Y[0,0].shape[1]
 len_t = Y[0,0].shape[2]
@@ -22,7 +21,7 @@ n_vec = [Y[0,k].shape[0] for k in range(K)]
 n = sum(n_vec)
 h = 5.848/np.cbrt(len_t)
 
-Y_list = [Y[0,k].transpose([0,2,1]).reshape([n_vec[k], p*len_t]) for k in range(K)] # ni by p by t -> each element: ni by time*p
+Y_list = [Y[0,k].reshape([n_vec[k], p*len_t]) for k in range(K)] # ni by p by t -> each element: ni by time*p
 
 S_Y_list = [np.matmul(Y_list[k].T, Y_list[k])/n_vec[k] for k in range(K)]
 
@@ -49,6 +48,15 @@ for k in range(K):
     S_0_list.append(S_0_k_list)
     S_0_pd_list.append(S_0_pd_k_list)
     
+# test weight
+for k in range(K): 
+    for m in range(len_t):
+        for l in [i for i in range(len_t) if i != m]:
+            S_ml = S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
+            w_ml = np.exp(-np.square(m - l)/h)
+#            print(w_ml)
+            w = w + w_ml
+    
 S_X_list = []
 for k in range(K): 
     S_Y = S_Y_list[k]
@@ -68,10 +76,11 @@ t = 40
 S_0 = np.sum(np.array([S_0_pd_list[k][t]*n_vec[k]/n for k in range(K)]), axis = 0)
 S_array = np.insert(S_X_array[t], 0, S_0, axis=0)
 S_array0 = S_array
-alpha_max(S_array0[4])
 
-lam1 = 0.25
-lam2 = 0.6
+# alpha_max(S_array0[4])
+
+lam1 = 2
+lam2 = 10
 lam_vec = [lam1, lam2, lam2, lam2, lam2] 
 
 Omega_list = [cov.graph_lasso(S_array[k], lam_vec[k], verbose = False, max_iter=5000, tol = 1e-3)[1] for k in range(K+1)] 
