@@ -100,10 +100,10 @@ robjects.r('''
 
 r_MatrixMaxProj = robjects.globalenv['MatrixMaxProj']
 
-if not rpackages.isinstalled('QUIC'):
-    # import rpy2's package module
-    import rpy2.robjects.packages as rpackages
-    
+# import rpy2's package module
+import rpy2.robjects.packages as rpackages
+
+if not rpackages.isinstalled('QUIC'):    
     # import R's utility package
     utils = rpackages.importr('utils')
     
