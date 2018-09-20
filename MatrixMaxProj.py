@@ -100,16 +100,16 @@ robjects.r('''
 
 r_MatrixMaxProj = robjects.globalenv['MatrixMaxProj']
 
-
-# import rpy2's package module
-import rpy2.robjects.packages as rpackages
-
-# import R's utility package
-utils = rpackages.importr('utils')
-
-# select a mirror for R packages
-utils.chooseCRANmirror(ind=145) # select the first mirror in the list
-utils.install_packages("QUIC")
+if not rpackages.isinstalled('QUIC'):
+    # import rpy2's package module
+    import rpy2.robjects.packages as rpackages
+    
+    # import R's utility package
+    utils = rpackages.importr('utils')
+    
+    # select a mirror for R packages
+    utils.chooseCRANmirror(ind=145) # select the first mirror in the list
+    utils.install_packages("QUIC")
 
 robjects.r('''
            library("QUIC")

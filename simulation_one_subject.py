@@ -14,16 +14,15 @@ from two_d_graphs.myfunctions import *
 from two_d_graphs.posdef import *
 from two_d_graphs.MatrixMaxProj import *
 from scipy import io
-
 from statsmodels.stats.moment_helpers import cov2corr
 
 p = 50
-d = 3
+d = 2
 n_change = 3
 len_t = 201
 n = 1
 h = 5.848/np.cbrt(len_t-1)
-sigma = 0.5
+sigma = 0.1
 phi = 0.5
 
 gG = getGraph(p, d)
@@ -42,9 +41,9 @@ Y = X+E0
 Y_list = [Y]
 for time_ix in range(1,len_t):
     C = C_T_list[time_ix]*sigma**2
-#    E = np.random.multivariate_normal(mean = np.zeros(p), cov = C, size = n)
-    E = phi*E0 + np.random.multivariate_normal(mean = np.zeros(p), cov = C, size = n)
-    E0 = E
+    E = np.random.multivariate_normal(mean = np.zeros(p), cov = C, size = n)
+#    E = phi*E0 + np.random.multivariate_normal(mean = np.zeros(p), cov = C, size = n)
+#    E0 = E
     Y = X+E
     Y_list.append(Y)
     
@@ -77,7 +76,7 @@ for m in range(len_t):
         S_El = EET0[l]
 #            S_ml = S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
         w_ml = np.exp(-np.square((m - l)/(h*(len_t-1))))
-        print(w_ml)
+#        print(w_ml)
         S_Y0 = S_Y0 + S_Yl*w_ml
         S_E0 = S_E0 + S_El*w_ml
         w = w + w_ml      
@@ -112,19 +111,23 @@ for m in range(len_t):
 #    for l in [i for i in range(len_t) if i != m]:
         S_ml = S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
         w_ml = 1-np.exp(-np.square((m - l)/(h*(len_t-1))))
-        print m,l,w_ml
+#        print m,l,w_ml
         w = w + w_ml
         S_X_cov = S_X_cov + S_ml*w_ml
 S_X_cov = S_X_cov/w
 S_X_cov = np.array(r_MatrixMaxProj(robjects.r.matrix(robjects.FloatVector(S_X_cov.ravel()), nrow=p)))
 
 # shrunk covariance
+max(np.linalg.eig(S_X_cov)[0])
+min(np.linalg.eig(S_X_cov)[0])
 S_X_cov_shrunk = cov.shrunk_covariance(S_X_cov, 0.7)
+max(np.linalg.eig(S_X_cov_shrunk)[0])
+min(np.linalg.eig(S_X_cov_shrunk)[0])
 alpha_1 = alpha_max(S_X_cov_shrunk)
 alpha_0 = alpha_1*0.01
 alphas = np.logspace(np.log10(alpha_1), np.log10(alpha_0), 50)
 Omega_cov_shrunk = [cov.graph_lasso(S_X_cov_shrunk, alpha)[1] for alpha in alphas]
-getF1(A0, Omega_cov_shrunk[49])
+getF1(A0, Omega_cov_shrunk[19])
 
 
 # quic
@@ -135,5 +138,5 @@ r_rho_mtx = robjects.r.matrix(robjects.FloatVector(((np.triu(np.ones((p,p)), 1) 
 result_S_X_cov = r_QUIC(r_S_X_cov, r_rho_mtx, r_path_vec)
 Omega_cov = np.array(result_S_X_cov[0])
 
-getF1(A0, Omega_cov[:,:,10])
+getF1(A0, Omega_cov[:,:,30])
 
