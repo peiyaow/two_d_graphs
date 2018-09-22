@@ -16,7 +16,12 @@ from two_d_graphs.MatrixMaxProj import *
 from scipy import io
 from statsmodels.stats.moment_helpers import cov2corr
 
+# lab computer
 data = io.loadmat('/home/peiyao/fMRI_data/fMRI_MDD.mat')['data']
+
+# my own laptop
+data = io.loadmat('/Users/MonicaW/Documents/Research/graph_matlab/MDD/fMRI_MDD.mat')['data']
+
 data[0,0] = data[0,0][np.array([i for i in range(100) if i != 60]),:,:] # delete No.61
 K = data.shape[1]
 p = data[0,0].shape[2]
@@ -104,6 +109,9 @@ for t in range(len_t):
     
 var_Y_array = np.array(var_Y)
 
+import scipy.io as sio
+sio.savemat('var_Y_array.mat', {'var_Y_array':var_Y_array, })
+
 var_Y_mean = np.mean(var_Y_array, 0)
 
 S0 = var_Y_array[0]
@@ -111,6 +119,7 @@ S1 = var_Y_array[160]
 
 S0_pd = np.array(r_MatrixMaxProj(robjects.r.matrix(robjects.FloatVector(S0.ravel()), nrow=p)))
 S1_pd = np.array(r_MatrixMaxProj(robjects.r.matrix(robjects.FloatVector(S1.ravel()), nrow=p)))
+
 
 test0 = np.linalg.eig(S0_pd)
 test1 = np.linalg.eig(S1_pd)
