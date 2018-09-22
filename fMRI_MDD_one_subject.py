@@ -9,7 +9,7 @@ Created on Thu Sep 20 10:26:38 2018
 import numpy as np
 import sys
 import os
-sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.abspath('/home/peiyao/GitHub/'))
 from two_d_graphs.myfunctions import *
 from two_d_graphs.posdef import *
 from two_d_graphs.MatrixMaxProj import *
