@@ -1,7 +1,8 @@
 import numpy as np
 import sys
 import os
-sys.path.append(os.path.abspath('/home/peiyao/GitHub/'))
+sys.path.append(os.path.abspath('..'))
+#sys.path.append(os.path.abspath('/home/peiyao/GitHub/'))
 from two_d_graphs.myfunctions import *
 from two_d_graphs.posdef import *
 from two_d_graphs.MatrixMaxProj import *
@@ -20,6 +21,7 @@ len_t = data[0,0].shape[1]
 n_vec = [data[0,k].shape[0] for k in range(K)]
 n = sum(n_vec)
 h = 5.848/np.cbrt(len_t)
+
 # len_t_z = len_t/2
 # h_z = 5.848/np.cbrt(len_t_z)
 
@@ -39,8 +41,8 @@ kernel_mtx = kernel_mtx + np.transpose(kernel_mtx) + np.eye(len_t)
 # kernel_mtx_z = kernel_mtx_z + np.transpose(kernel_mtx_z) + np.eye(len_t)
 
 # select one MDD subject
-ix = 1
-Y = data[0,1][ix]
+ix = 5
+Y = data[0,0][ix]
 X = np.mean(Y, 0)
 Z = Y - X
 

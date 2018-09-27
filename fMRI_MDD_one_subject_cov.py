@@ -28,16 +28,18 @@ for t_ix in range(len_t-1):
 kernel_mtx = kernel_mtx + np.transpose(kernel_mtx) + np.eye(len_t)
 
 # select one MDD subject
-ix = 3
+ix = 1
 Y = data[0,1][ix]
 Y_stack = Y.reshape([1, len_t*p])
 S_Y = np.outer(Y_stack, Y_stack)
 
 S_X_cov = np.zeros([p, p]) # Sigma_0
 w = 0
+#S_ml_list = []
 for m in range(len_t):
     for l in range(len_t):
         S_ml = S_Y[m*p+np.array(range(p))[:, None], l*p+np.array(range(p))[None, :]]
+#        S_ml_list.append(S_ml)
         w_ml = 1-np.exp(-np.square((m - l)/(h*(len_t-1))))
         w = w + w_ml
         S_X_cov = S_X_cov + S_ml*w_ml

@@ -28,7 +28,7 @@ for t_ix in range(len_t-1):
 kernel_mtx = kernel_mtx + np.transpose(kernel_mtx) + np.eye(len_t)
 
 # select one MDD subject
-ix = 3
+ix = 1
 Y = data[0,1][ix]
 X = np.mean(Y, 0)
 Z = Y - X
@@ -46,6 +46,8 @@ for t in range(len_t):
     for s in range(len_t):
         var_s.append(kernel_mtx[t,s]*np.outer(Y[s,:], Y[s,:]))
     var_Y.append(np.sum(np.array(var_s),0)/np.sum(kernel_mtx[t,:]))
+
+var_Y[0] - var_Z[0]
 
 var_Y_array = np.array(var_Y)
 io.savemat('var_Y_array_Shuheng.mat', {'var_Y_array':var_Y_array})
