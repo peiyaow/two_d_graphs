@@ -86,8 +86,14 @@ def getGraph(p,d):
     for i in range(n_nonzero):
         r = np.random.uniform(0, 1.)
         S[row_ix[i], col_ix[i]] = r-1. if r < 0.5 else r
-    
-    vec_div = 1.5*np.sum(np.absolute(S), axis = 1)[:,None] 
+        # r = np.random.uniform(-.2, 0.4)
+        # S[row_ix[i], col_ix[i]] = r - .2 if r < 0.1 else r
+
+    #add
+    S = S + np.transpose(S)
+    #add end
+
+    vec_div = 1.5*np.sum(np.absolute(S), axis = 1)[:,None]
     for i in range(p):
         if vec_div[i]: 
             # only when the absolute value of the vector is not zero do the standardization
@@ -128,8 +134,10 @@ def getGraphatT_Shuheng(S, A, n_change):
     
     S_new = S + S_add - S_drop
     S_new0 = S_new.copy()
-    
-#    S_new = S_new + S_new.T
+
+    #add
+    S_new = S_new + S_new.T
+    #add end
     
     vec_div = 1.5*np.sum(np.absolute(S_new), axis = 1)[:,None]    
     for i in range(p):
@@ -168,15 +176,16 @@ def genEmpCov(samples, useKnownMean = False, m = 0):
     empCov = empCov/samplesPerStep
     return empCov
 
-def getF1(S0, S1):
+def getF1(S0, S1, include_diagonal = True):
     # S0 is the true graph and S1 is the estimated graph
     S_true, S_est = S0.copy(), S1.copy()
-    np.fill_diagonal(S_true, 0)
-    np.fill_diagonal(S_est, 0)
+    if not include_diagonal:
+        np.fill_diagonal(S_true, 0)
+        np.fill_diagonal(S_est, 0)
     
-    # number of detected edges on off diagonal 
+    # number of detected edges
     D = np.where(S_est != 0)[0].shape[0]
-    # number of true edges on off diagonal
+    # number of true edges
     T = np.where(S_true != 0)[0].shape[0]
     
     # number of true edges detected
@@ -192,6 +201,35 @@ def getF1(S0, S1):
     
     if P+R:
         F1 = 2*P*R/(P+R)
+    else:
+        F1 = np.nan
+    return P, R, F1
+
+
+def getF1_diagonal(S0, S1):
+    # S0 is the true graph and S1 is the estimated graph
+    S_true, S_est = S0.copy(), S1.copy()
+    #np.fill_diagonal(S_true, 0)
+    #np.fill_diagonal(S_est, 0)
+
+    # number of detected edges on off diagonal
+    D = np.where(S_est != 0)[0].shape[0]
+    # number of true edges on off diagonal
+    T = np.where(S_true != 0)[0].shape[0]
+
+    # number of true edges detected
+    TandD = float(np.where(np.logical_and(S_true, S_est))[0].shape[0])
+
+    #    print TandD
+    if D:
+        P = TandD / D
+    else:
+        #         print('No edge detected on off diagonal, precision is zero')
+        P = np.nan
+    R = TandD / T
+
+    if P + R:
+        F1 = 2 * P * R / (P + R)
     else:
         F1 = np.nan
     return P, R, F1
