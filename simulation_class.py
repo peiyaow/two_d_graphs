@@ -107,7 +107,8 @@ for i in range(50):
     R_hat_list.append(R_hat)
 
 plt.plot(P_list, R_list, P_X_list, R_X_list, P_hat_list, R_hat_list)
-
+plt.plot(P_list, R_list, P_X_list, R_X_list, P_hat_list, R_hat_list)
+plt.plot(P_hat_list, R_hat_list)
 # E
 C_t0_hat = C_T_hat[:,t0,:,:]
 C_t0 = C_T_list[t0]

@@ -49,10 +49,6 @@ for i in range(n):
 C_T_hat = np.array(var_E)
 
 
-
-
-
-
 alpha_1 = alpha_max(cov2corr(C0_hat))
 alpha_0 = alpha_1*0.5
 alphas = np.logspace(np.log10(alpha_1), np.log10(alpha_0), 50)
