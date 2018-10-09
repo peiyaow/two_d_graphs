@@ -24,6 +24,7 @@ h = 5.848/np.cbrt(len_t)
 
 k = 1
 Y = data[0,k].transpose([1,0,2])
+Y = Y[:,range(9),:]
 n = Y.shape[1]
 X_hat = Y.mean(0)
 C0_hat = np.dot(np.transpose(X_hat - X_hat.mean(0)), X_hat - X_hat.mean(0))/n
