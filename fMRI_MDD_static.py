@@ -49,13 +49,16 @@ for a in np.unique(score_MDD):
 
 score = score_MDD[ix_list]
 C_MDD_array = C_MDD_array[ix_list]
+n = C_MDD_array.shape[0]
+alpha_i = [alpha_max(C_MDD_array[i]) for i in range(n)]
+C_MDD_array = C_MDD_array[range(1)+range(2,n)]
 
 C_0 = np.mean(C_MDD_array, 0)
 alpha_1 = alpha_max(C_0)
-alpha_0 = alpha_1*0.01
+alpha_0 = alpha_1*0.1
 alphas = np.logspace(np.log10(alpha_1), np.log10(alpha_0), 50)
 S_0_list = [cov.graph_lasso(C_0, alpha)[1] for alpha in alphas]
-Omega = S_0_list[2]
+Omega = S_0_list[5]
 G0 = nx.from_numpy_array(Omega)
 nx.draw(G0)
 
