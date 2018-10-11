@@ -38,6 +38,7 @@ for k in range(K):
 S_MDD_array = np.array(S_list[1])
 C_MDD_array = np.array(C_list[1])
 
+# select subset
 score_data = pd.read_excel('/home/peiyao/fMRI_data/Alldata_200.xls')
 score = score_data['HAMD']
 score_MDD = np.array(score[:100])
@@ -52,7 +53,9 @@ C_MDD_array = C_MDD_array[ix_list]
 n = C_MDD_array.shape[0]
 alpha_i = [alpha_max(C_MDD_array[i]) for i in range(n)]
 C_MDD_array = C_MDD_array[range(1)+range(2,n)]
+# select subset 
 
+C_MDD_array = C_MDD_array[range(10)]
 C_0 = np.mean(C_MDD_array, 0)
 alpha_1 = alpha_max(C_0)
 alpha_0 = alpha_1*0.1
@@ -68,7 +71,7 @@ from TVGL.TVGL import *
 gvx = TGraphVX()
 n = C_MDD_array.shape[0]
 indexOfPenalty = 3
-lamb = alphas[2]
+lamb = alphas[5]
 beta = 5
 for i in range(n):
     n_id = i
