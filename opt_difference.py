@@ -14,6 +14,8 @@
 #prob.solve()
 
 #####
+from TVGL.inferGraphLaplacian import *
+from TVGL.TVGL import *
 gvx = TGraphVX()
 # C_MDD_array = C_MDD_array[range(11)+range(12,14)]
 n = C_MDD_array.shape[0]
