@@ -8,15 +8,19 @@ from scipy import io
 from statsmodels.stats.moment_helpers import cov2corr
 import pandas as pd
 
+# lab
 data = io.loadmat('/home/peiyao/fMRI_data/fMRI_AD.mat')['data0']
+
+# laptop
+data = io.loadmat('/Users/MonicaW/Documents/Research/graph_matlab/ADNI/fMRI_AD.mat')['data0']
 K = data.shape[1]
 p = data[0,0].shape[1]
 len_t = data[0,0].shape[2]
 n_vec = [data[0,k].shape[0] for k in range(K)]
 n = sum(n_vec)
-h = 5.848/np.cbrt(len_t)
-
-data = [data[0,k].transpose([0, 2, 1]) for k in range(K)] # ni by t by p
+# h = 5.848/np.cbrt(len_t)
+# data = [data[0,k].transpose([0, 2, 1]) for k in range(K)] # ni by t by p
+data = [data[0,k] for k in range(K)] # ni by t by p
 
 S_list = []
 C_list = []
@@ -33,16 +37,23 @@ for k in range(K):
     S_list.append(S_k_list)
     C_list.append(C_k_list)
 
-C_array_list = [np.array(C_list[k]) for k in range(K)]
+C_array_list = [np.array(C_list[k][:10]) for k in range(K)]
 C_mean_array_list = [C_array_list[k].mean(0) for k in range(K)]
 
+# alpha_mtx for mean
 alphas = [alpha_max(C_mean_array_list[k]) for k in range(K)]
 alpha_mtx = np.vstack([np.logspace(np.log10(np.array(alphas))[k], np.log10(np.array(alphas)*0.1)[k], 50) for k in range(K)])
+
+# alpha_mtx for each subject
+alphas_sbj = [[alpha_max(C) for C in C_array_list[k]] for k in range(K)]
+# alphas_sbj_mtx_list = [np.vstack([np.logspace(np.log10(alphas_sbj[k][i]), np.log10(alphas_sbj[k][i]*0.5), 50) for i in range(10)]) for k in range(K)]
+alphas_sbj_mtx_list = [np.vstack([np.logspace(np.log10(alphas_sbj[k][i]), np.log10(alphas_sbj[k][i]*0.5), 50) for i in range(n_vec[k])]) for k in range(K)]
 
 S_0_list = [[cov.graph_lasso(C_mean_array_list[k], alpha)[1] for alpha in alpha_mtx[k]] for k in range(K)]
 S_0_array = np.array(S_0_list).transpose([1,0,2,3])
 
-Omega = S_0_array[10][0]
+Omega = S_0_array[5][0]
+sum(sum(np.abs(Omega)!=0))
 
 from TVGL.inferGraphLaplacian import *
 from TVGL.TVGL import *
